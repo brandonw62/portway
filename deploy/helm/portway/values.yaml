@@ -1,0 +1,92 @@
+# ── Portway API Server ────────────────────────────────────────────────────────
+replicaCount: 1
+
+image:
+  repository: ghcr.io/portway/portway
+  pullPolicy: IfNotPresent
+  tag: ""  # Defaults to Chart.appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: portway.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# ── Worker Deployment ─────────────────────────────────────────────────────────
+worker:
+  replicaCount: 1
+  resources: {}
+
+# ── Application Config (mapped to env vars) ───────────────────────────────────
+config:
+  serverPort: 8080
+  logLevel: info
+  environment: production
+  github:
+    appId: ""
+    privateKeySecretName: ""  # K8s secret containing github-app.pem
+    webhookSecret: ""
+
+# ── Subchart: PostgreSQL (standalone profile) ──────────────────────────────────
+postgresql:
+  enabled: true
+  auth:
+    username: portway
+    password: portway
+    database: portway
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+# ── Subchart: Valkey (standalone profile) ──────────────────────────────────────
+# Uses the official valkey-io/valkey-helm chart (not Bitnami).
+# Schema reference: https://github.com/valkey-io/valkey-helm
+valkey:
+  enabled: true
+  auth:
+    enabled: false
+  dataStorage:
+    enabled: true
+    requestedSize: "2Gi"
+
+# ── External services (overridden in values-external.yaml) ───────────────────
+externalDatabase:
+  url: ""  # Full DSN; required when postgresql.enabled=false
+
+externalValkey:
+  url: ""  # Full Valkey/Redis URL; required when valkey.enabled=false

@@ -1,0 +1,20 @@
+# External services profile — disables in-cluster subcharts and wires
+# the application to external PostgreSQL and Valkey endpoints instead.
+#
+# Apply on top of values.yaml:
+#   helm install portway . -f values.yaml -f values-external.yaml
+
+# Disable Bitnami subcharts.
+postgresql:
+  enabled: false
+
+valkey:
+  enabled: false
+
+# Provide full DSNs via external secret references or direct values.
+# In production, reference a K8s Secret rather than embedding credentials here.
+externalDatabase:
+  url: "postgres://portway:CHANGE_ME@your-rds-host.example.com:5432/portway?sslmode=require"
+
+externalValkey:
+  url: "redis://your-valkey-host.example.com:6379/0"

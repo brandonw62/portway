@@ -1,0 +1,50 @@
+# ── Binaries ──────────────────────────────────────────────────────────────────
+bin/
+/portway
+/worker
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# ── Go toolchain ──────────────────────────────────────────────────────────────
+*.test
+*.out
+vendor/
+/go.work
+/go.work.sum
+
+# ── Environment / secrets ──────────────────────────────────────────────────────
+.env
+*.pem
+*.key
+*.p8
+
+# ── Node / frontend ────────────────────────────────────────────────────────────
+node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ── IDE / editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── golangci-lint ──────────────────────────────────────────────────────────────
+.golangci-lint-cache/
+
+# ── sqlc ──────────────────────────────────────────────────────────────────────
+# Keep generated files in VCS; ignore the cache directory.
+.sqlc/

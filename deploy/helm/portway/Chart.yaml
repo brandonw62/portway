@@ -1,0 +1,28 @@
+apiVersion: v2
+name: portway
+description: >
+  Portway — a lightweight open-source Internal Developer Portal (IDP).
+  A Backstage alternative for solo developers and small engineering teams.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - idp
+  - developer-portal
+  - backstage
+  - platform-engineering
+home: https://github.com/portway/portway
+sources:
+  - https://github.com/portway/portway
+maintainers:
+  - name: Portway Contributors
+    url: https://github.com/portway/portway
+dependencies:
+  - name: postgresql
+    version: "16.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: valkey
+    version: "0.x.x"
+    repository: "https://valkey.io/valkey-helm/"
+    condition: valkey.enabled

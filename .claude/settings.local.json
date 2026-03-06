@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go mod tidy)",
+      "Bash(go build ./cmd/portway)",
+      "Bash(go build ./cmd/worker)",
+      "Bash(npm create vite@latest web -- --template react-ts)",
+      "Bash(npm install)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:artifacthub.io)",
+      "WebFetch(domain:valkey.io)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:tanstack.com)",
+      "WebFetch(domain:medium.com)"
+    ]
+  }
+}
