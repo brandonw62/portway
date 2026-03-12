@@ -30,6 +30,15 @@ import (
 const (
 	// TypeGitHubSync triggers a full sync of all installed GitHub App repos.
 	TypeGitHubSync = "github:sync"
+
+	// TypeResourceProvision provisions a new infrastructure resource.
+	TypeResourceProvision = "resource:provision"
+
+	// TypeResourceDelete deprovisions and removes an infrastructure resource.
+	TypeResourceDelete = "resource:delete"
+
+	// TypeResourceHealthCheck checks the health of a provisioned resource.
+	TypeResourceHealthCheck = "resource:healthcheck"
 )
 
 // Client wraps asynq.Client and provides typed enqueue helpers.
@@ -70,6 +79,51 @@ func (c *Client) EnqueueGitHubSync(ctx context.Context, payload GitHubSyncPayloa
 	info, err := c.inner.EnqueueContext(ctx, task)
 	if err != nil {
 		return nil, fmt.Errorf("jobs: failed to enqueue %s: %w", TypeGitHubSync, err)
+	}
+	return info, nil
+}
+
+// ResourceProvisionPayload is the JSON payload for TypeResourceProvision tasks.
+type ResourceProvisionPayload struct {
+	ResourceID string `json:"resource_id"`
+	ActorID    string `json:"actor_id"`
+}
+
+// EnqueueResourceProvision enqueues a resource provisioning task.
+func (c *Client) EnqueueResourceProvision(ctx context.Context, payload ResourceProvisionPayload, opts ...asynq.Option) (*asynq.TaskInfo, error) {
+	return c.enqueue(ctx, TypeResourceProvision, payload, opts...)
+}
+
+// ResourceDeletePayload is the JSON payload for TypeResourceDelete tasks.
+type ResourceDeletePayload struct {
+	ResourceID string `json:"resource_id"`
+	ActorID    string `json:"actor_id"`
+}
+
+// EnqueueResourceDelete enqueues a resource deletion task.
+func (c *Client) EnqueueResourceDelete(ctx context.Context, payload ResourceDeletePayload, opts ...asynq.Option) (*asynq.TaskInfo, error) {
+	return c.enqueue(ctx, TypeResourceDelete, payload, opts...)
+}
+
+// ResourceHealthCheckPayload is the JSON payload for TypeResourceHealthCheck tasks.
+type ResourceHealthCheckPayload struct {
+	ResourceID string `json:"resource_id"`
+}
+
+// EnqueueResourceHealthCheck enqueues a resource health check task.
+func (c *Client) EnqueueResourceHealthCheck(ctx context.Context, payload ResourceHealthCheckPayload, opts ...asynq.Option) (*asynq.TaskInfo, error) {
+	return c.enqueue(ctx, TypeResourceHealthCheck, payload, opts...)
+}
+
+func (c *Client) enqueue(ctx context.Context, taskType string, payload any, opts ...asynq.Option) (*asynq.TaskInfo, error) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("jobs: failed to marshal %s payload: %w", taskType, err)
+	}
+	task := asynq.NewTask(taskType, data, opts...)
+	info, err := c.inner.EnqueueContext(ctx, task)
+	if err != nil {
+		return nil, fmt.Errorf("jobs: failed to enqueue %s: %w", taskType, err)
 	}
 	return info, nil
 }

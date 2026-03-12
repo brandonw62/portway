@@ -42,4 +42,12 @@ var (
 	// ErrInternal is a catch-all for unexpected server-side failures that
 	// should not leak internal detail to the caller.
 	ErrInternal = errors.New("internal error")
+
+	// ErrQuotaExceeded is returned when a provisioning request would exceed
+	// the applicable resource quota.
+	ErrQuotaExceeded = errors.New("quota exceeded")
+
+	// ErrApprovalRequired is returned when a provisioning request matches a
+	// policy that requires explicit approval before proceeding.
+	ErrApprovalRequired = errors.New("approval required")
 )

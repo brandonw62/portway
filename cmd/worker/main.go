@@ -29,6 +29,7 @@ import (
 
 	"github.com/portway/portway/internal/config"
 	"github.com/portway/portway/internal/db"
+	awsprovider "github.com/portway/portway/internal/integrations/aws"
 	"github.com/portway/portway/internal/jobs"
 )
 
@@ -72,8 +73,7 @@ func run() error {
 	defer pool.Close()
 	logger.Info().Msg("database pool ready")
 
-	// Suppress the pool variable until it is wired into handlers.
-	_ = pool
+	queries := db.New(pool)
 
 	// -- Valkey / Asynq ---------------------------------------------------
 	redisOpt, err := asynq.ParseRedisURI(cfg.RedisURL)
@@ -99,12 +99,35 @@ func run() error {
 	// -- Task Router ------------------------------------------------------
 	mux := asynq.NewServeMux()
 
-	// Register handlers here as they are implemented.
-	// Example: mux.HandleFunc(jobs.TypeGitHubSync, githubHandler.HandleGitHubSync)
+	// GitHub sync (placeholder).
 	mux.HandleFunc(jobs.TypeGitHubSync, func(ctx context.Context, t *asynq.Task) error {
 		logger.Info().Str("task_type", t.Type()).Msg("received task (no-op placeholder)")
 		return nil
 	})
+
+	// Resource provisioning handlers.
+	var provisioner jobs.Provisioner
+	switch cfg.Provider {
+	case "aws":
+		awsCfg := awsprovider.Config{
+			Region:    cfg.AWSRegion,
+			AccountID: cfg.AWSAccountID,
+			RoleARN:   cfg.AWSRoleARN,
+		}
+		awsCtx, awsCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer awsCancel()
+		p, err := awsprovider.New(awsCtx, awsCfg, logger)
+		if err != nil {
+			return fmt.Errorf("worker: init aws provider: %w", err)
+		}
+		provisioner = p
+		logger.Info().Str("region", cfg.AWSRegion).Msg("using AWS provisioner")
+	default:
+		provisioner = &jobs.NoopProvisioner{}
+		logger.Info().Msg("using noop provisioner")
+	}
+	resourceHandler := jobs.NewResourceHandler(queries, provisioner, logger)
+	resourceHandler.Register(mux)
 
 	// -- Start ------------------------------------------------------------
 	logger.Info().Msg("worker listening for tasks")

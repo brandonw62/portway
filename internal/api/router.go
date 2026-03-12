@@ -18,6 +18,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -25,11 +26,17 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
+
+	"github.com/portway/portway/internal/db"
+	"github.com/portway/portway/internal/jobs"
 )
 
 // RouterConfig holds the dependencies needed to construct the HTTP router.
 type RouterConfig struct {
-	Logger zerolog.Logger
+	Logger      zerolog.Logger
+	Queries     *db.Queries
+	Jobs        *jobs.Client
+	Auth        AuthConfig
 }
 
 // NewRouter constructs and returns the application's root Chi router.
@@ -60,13 +67,63 @@ func NewRouter(cfg RouterConfig) http.Handler {
 	// Recover from panics and return HTTP 500.
 	r.Use(middleware.Recoverer)
 
+	// -- Auth setup -------------------------------------------------------
+
+	var authMW func(http.Handler) http.Handler
+	var ah *authHandler
+
+	if cfg.Auth.OIDCEnabled() {
+		var err error
+		ah, err = newAuthHandler(context.Background(), cfg.Auth)
+		if err != nil {
+			cfg.Logger.Fatal().Err(err).Msg("failed to initialize OIDC provider")
+		}
+		authMW = ah.AuthMiddleware
+		cfg.Logger.Info().Str("issuer", cfg.Auth.IssuerURL).Msg("OIDC authentication enabled")
+	} else if cfg.Auth.Environment == "development" {
+		authMW = devAuthMiddleware(cfg.Queries)
+		cfg.Logger.Warn().Msg("OIDC not configured — using X-User-Id header auth (development mode)")
+	}
+
 	// -- Routes -----------------------------------------------------------
 
 	r.Get("/healthz", HandleHealthz)
 
-	// API v1 subrouter — extend here as features are added.
+	// API v1 subrouter.
 	r.Route("/api/v1", func(r chi.Router) {
-		// placeholder: service catalog, component, GitHub webhook routes
+		// Auth endpoints (unauthenticated).
+		if ah != nil {
+			r.Get("/auth/login", ah.HandleLogin)
+			r.Get("/auth/callback", ah.HandleCallback)
+			r.Get("/auth/me", ah.HandleMe)
+		} else if cfg.Auth.Environment == "development" {
+			r.Get("/auth/me", devHandleMe(cfg.Queries))
+		}
+
+		// Authenticated routes in a separate group so middleware is
+		// applied before any route registration (Chi requirement).
+		r.Group(func(r chi.Router) {
+			if authMW != nil {
+				r.Use(authMW)
+			}
+
+			rth := &resourceTypeHandler{q: cfg.Queries}
+			r.Get("/resource-types", rth.HandleList)
+			r.Get("/resource-types/{id}", rth.HandleGet)
+
+			rh := &resourceHandler{q: cfg.Queries, jobs: cfg.Jobs}
+			r.Post("/resources", rh.HandleCreate)
+			r.Get("/resources", rh.HandleList)
+			r.Get("/resources/{id}", rh.HandleGet)
+			r.Delete("/resources/{id}", rh.HandleDelete)
+
+			r.Get("/projects/{id}/resources", rh.HandleListByProject)
+
+			apph := &approvalHandler{q: cfg.Queries, jobs: cfg.Jobs}
+			r.Get("/approvals", apph.HandleList)
+			r.Get("/approvals/{id}", apph.HandleGet)
+			r.Post("/approvals/{id}/review", apph.HandleReview)
+		})
 	})
 
 	return r

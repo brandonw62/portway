@@ -33,6 +33,20 @@ type Config struct {
 	GitHubWebhookSecret  string `env:"GITHUB_WEBHOOK_SECRET"`
 	LogLevel             string `env:"LOG_LEVEL" envDefault:"info"`
 	Environment          string `env:"ENVIRONMENT" envDefault:"development"`
+
+	// AWS provider configuration.
+	AWSRegion    string `env:"AWS_REGION" envDefault:"us-east-1"`
+	AWSAccountID string `env:"AWS_ACCOUNT_ID"`
+	AWSRoleARN   string `env:"AWS_ROLE_ARN"`
+
+	// Provider selects the provisioner backend: "noop" or "aws".
+	Provider string `env:"PROVIDER" envDefault:"noop"`
+
+	// OIDC authentication.
+	OIDCIssuerURL    string `env:"OIDC_ISSUER_URL"`
+	OIDCClientID     string `env:"OIDC_CLIENT_ID"`
+	OIDCClientSecret string `env:"OIDC_CLIENT_SECRET"`
+	OIDCRedirectURL  string `env:"OIDC_REDIRECT_URL"`
 }
 
 // Load reads configuration from environment variables and returns a Config.

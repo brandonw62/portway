@@ -33,6 +33,7 @@ import (
 	"github.com/portway/portway/internal/api"
 	"github.com/portway/portway/internal/config"
 	"github.com/portway/portway/internal/db"
+	"github.com/portway/portway/internal/jobs"
 )
 
 func main() {
@@ -78,9 +79,30 @@ func run() error {
 	defer pool.Close()
 	logger.Info().Msg("database pool ready")
 
+	// -- Database Queries -------------------------------------------------
+	queries := db.New(pool)
+
+	// -- Job Queue --------------------------------------------------------
+	jobClient, err := jobs.NewClient(cfg.RedisURL)
+	if err != nil {
+		return fmt.Errorf("main: %w", err)
+	}
+	defer jobClient.Close()
+	logger.Info().Msg("job queue client ready")
+
 	// -- HTTP Router ------------------------------------------------------
 	router := api.NewRouter(api.RouterConfig{
-		Logger: logger,
+		Logger:  logger,
+		Queries: queries,
+		Jobs:    jobClient,
+		Auth: api.AuthConfig{
+			IssuerURL:    cfg.OIDCIssuerURL,
+			ClientID:     cfg.OIDCClientID,
+			ClientSecret: cfg.OIDCClientSecret,
+			RedirectURL:  cfg.OIDCRedirectURL,
+			Environment:  cfg.Environment,
+			Queries:      queries,
+		},
 	})
 
 	// -- HTTP Server ------------------------------------------------------

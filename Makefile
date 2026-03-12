@@ -3,17 +3,18 @@
 
 BINARY_SERVER := bin/portway
 BINARY_WORKER := bin/worker
+BINARY_CLI    := bin/portway-cli
 GO            := go
 GOFLAGS       :=
 
-.PHONY: all build build-server build-worker run run-worker test lint \
+.PHONY: all build build-server build-worker build-cli run run-worker test lint \
         generate migrate-up migrate-down dev clean
 
 ## all: build both binaries (default target)
 all: build
 
-## build: compile both the API server and background worker
-build: build-server build-worker
+## build: compile all binaries
+build: build-server build-worker build-cli
 
 ## build-server: compile the API server binary to bin/portway
 build-server:
@@ -24,6 +25,11 @@ build-server:
 build-worker:
 	@mkdir -p bin
 	$(GO) build $(GOFLAGS) -o $(BINARY_WORKER) ./cmd/worker
+
+## build-cli: compile the CLI tool to bin/portway-cli
+build-cli:
+	@mkdir -p bin
+	$(GO) build $(GOFLAGS) -o $(BINARY_CLI) ./cmd/portway-cli
 
 ## run: start the API server (reads .env if present)
 run: build-server
