@@ -123,6 +123,26 @@ func NewRouter(cfg RouterConfig) http.Handler {
 			r.Get("/approvals", apph.HandleList)
 			r.Get("/approvals/{id}", apph.HandleGet)
 			r.Post("/approvals/{id}/review", apph.HandleReview)
+
+			th := &teamHandler{q: cfg.Queries}
+			r.Get("/teams", th.HandleList)
+			r.Post("/teams", th.HandleCreate)
+			r.Get("/teams/{teamId}", th.HandleGet)
+			r.Put("/teams/{teamId}", th.HandleUpdate)
+			r.Delete("/teams/{teamId}", th.HandleDelete)
+			r.Get("/teams/{teamId}/members", th.HandleListMembers)
+			r.Post("/teams/{teamId}/members", th.HandleAddMember)
+			r.Delete("/teams/{teamId}/members/{userId}", th.HandleRemoveMember)
+
+			ph := &projectHandler{q: cfg.Queries}
+			r.Get("/teams/{teamId}/projects", ph.HandleList)
+			r.Post("/teams/{teamId}/projects", ph.HandleCreate)
+			r.Get("/teams/{teamId}/projects/{projectId}", ph.HandleGet)
+			r.Put("/teams/{teamId}/projects/{projectId}", ph.HandleUpdate)
+			r.Delete("/teams/{teamId}/projects/{projectId}", ph.HandleDelete)
+			r.Get("/teams/{teamId}/projects/{projectId}/members", ph.HandleListMembers)
+			r.Post("/teams/{teamId}/projects/{projectId}/members", ph.HandleAddMember)
+			r.Delete("/teams/{teamId}/projects/{projectId}/members/{userId}", ph.HandleRemoveMember)
 		})
 	})
 

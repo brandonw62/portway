@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { listResourceTypes, createResource, type ResourceType } from '../api';
-
-// Hardcoded project ID for now
-const PROJECT_ID = 'default-project';
+import { useWorkspace } from '../WorkspaceContext';
 
 export default function ProvisionPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedType = searchParams.get('type') || '';
+  const { activeProject } = useWorkspace();
 
   const [types, setTypes] = useState<ResourceType[]>([]);
   const [typeId, setTypeId] = useState(preselectedType);
@@ -57,8 +56,13 @@ export default function ProvisionPage() {
 
     setSubmitting(true);
     try {
+      if (!activeProject) {
+        setError('Select a project first');
+        setSubmitting(false);
+        return;
+      }
       await createResource({
-        project_id: PROJECT_ID,
+        project_id: activeProject.id,
         resource_type_id: typeId,
         name: name.trim(),
         spec,

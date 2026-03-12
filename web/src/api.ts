@@ -110,3 +110,68 @@ export function reviewApproval(
     body: JSON.stringify(body),
   });
 }
+
+// --- Teams ---
+
+export interface Team {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function listTeams(): Promise<Team[]> {
+  return request('/teams');
+}
+
+export function getTeam(id: string): Promise<Team> {
+  return request(`/teams/${id}`);
+}
+
+export function createTeam(body: { name: string; description?: string }): Promise<Team> {
+  return request('/teams', { method: 'POST', body: JSON.stringify(body) });
+}
+
+// --- Projects ---
+
+export interface Project {
+  id: string;
+  team_id: string;
+  name: string;
+  slug: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function listProjects(teamId: string): Promise<Project[]> {
+  return request(`/teams/${teamId}/projects`);
+}
+
+export function getProject(teamId: string, projectId: string): Promise<Project> {
+  return request(`/teams/${teamId}/projects/${projectId}`);
+}
+
+export function createProject(
+  teamId: string,
+  body: { name: string; description?: string },
+): Promise<Project> {
+  return request(`/teams/${teamId}/projects`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+// --- Auth ---
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export function getMe(): Promise<AuthUser> {
+  return request('/auth/me');
+}

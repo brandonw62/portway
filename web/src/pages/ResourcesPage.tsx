@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listResources, type Resource } from '../api';
-
-// Hardcoded project ID for now — will come from project switcher later
-const PROJECT_ID = 'default-project';
+import { useWorkspace } from '../WorkspaceContext';
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { activeProject } = useWorkspace();
 
   useEffect(() => {
-    listResources(PROJECT_ID).then(setResources).catch((e: Error) => setError(e.message));
-  }, []);
+    if (!activeProject) return;
+    listResources(activeProject.id).then(setResources).catch((e: Error) => setError(e.message));
+  }, [activeProject]);
 
   return (
     <>
